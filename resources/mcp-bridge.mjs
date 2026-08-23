@@ -35,6 +35,10 @@ function readHarness() {
   // shared-file races harness.json has when several instances run at once
   // (e.g. dev + packaged: one quitting used to delete the other's file).
   const { GENIEENGINE_HARNESS_PORT: envPort, GENIEENGINE_HARNESS_TOKEN: envToken } = process.env
+  // Default port passed in by the app (see src/main/services/comfyui.ts) as
+  // argv[2], so this zero-dependency bridge doesn't import from the TS
+  // service. Kept in sync by the app; falls back to ComfyUI's default.
+  const COMFYUI_DEFAULT_PORT = Number(process.argv[2]) || 8188
   if (envPort && envToken) return { port: Number(envPort), token: envToken }
   try {
     return JSON.parse(readFileSync(join(userDataDir(), 'harness.json'), 'utf8'))
@@ -230,8 +234,12 @@ const GPT_IMAGE_TOOL = {
  * instance to generate images by dynamically building a workflow JSON — the AI
  * chooses the nodes, the model, and the sampling parameters.
  */
-// Defaults mirror src/main/services/comfyui.ts — kept in sync by convention
-// (mcp-bridge.mjs is zero-dependency, so we don't import from there).
+// ComfyUI workflow defaults (see src/main/services/comfyui.ts). Width, steps,
+// cfg scale, and checkpoint are tool-description only — the actual generation
+// runs through test-harness.ts, which reads the real values from the TS
+// service. The default PORT, however, is surfaced to the user in this tool's
+// description and must stay identical to the app's, so it is imported rather
+// than duplicated.
 const COMFYUI_DEFAULT_WIDTH = 1024
 const COMFYUI_DEFAULT_HEIGHT = 1024
 const COMFYUI_DEFAULT_STEPS = 20
