@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type {
   ModelSlotRequest,
   ModelSlotStatus,
@@ -7,6 +7,8 @@ import type {
   ThinkingMode
 } from '../../../shared/types'
 import { SparkIcon, XIcon } from './Icons'
+import { useTranslation } from '../i18n/useTranslation'
+import { COMFYUI_DEFAULT_PORT } from '../../../main/services/comfyui'
 
 interface Props {
   status: SetupStatus
@@ -15,12 +17,13 @@ interface Props {
   onClose?: () => void
 }
 
-type SetupTab = 'agent' | '2d' | '3d'
+type SetupTab = 'agent' | '2d' | '3d' | 'comfyui'
 
 const TABS: { id: SetupTab; label: string }[] = [
-  { id: 'agent', label: 'Models' },
-  { id: '2d', label: '2D Asset Generation (Optional)' },
-  { id: '3d', label: '3D Asset Generation (Optional)' }
+  { id: 'agent', label: '模型' },
+  { id: '2d', label: '2D 资源生成（OpenAI，可选）' },
+  { id: 'comfyui', label: '2D 资源生成（ComfyUI，可选）' },
+  { id: '3d', label: '3D 资源生成（可选）' }
 ]
 
 /** Mirrors the main process default — used to tell "same endpoint" from "own endpoint". */
@@ -32,20 +35,20 @@ type SlotId = 'medium' | 'large' | 'image'
 const MODEL_SLOTS: { id: SlotId; title: string; hint: string; modelPlaceholder: string }[] = [
   {
     id: 'medium',
-    title: 'Chat model — Medium',
-    hint: 'The everyday model that plans and writes your game’s code. Any OpenAI-compatible API endpoint will work.',
+    title: '聊天模型 — Medium',
+    hint: '用于日常规划和编写游戏代码的模型。支持任何 OpenAI 兼容的 API 端点。',
     modelPlaceholder: 'deepseek/deepseek-v4-pro'
   },
   {
     id: 'large',
-    title: 'Chat model — Large',
-    hint: 'A heavyweight model for tough tasks that need extra juice — switch to it from the dropdown in the chat box. Usually slower, and may cost more per message.',
+    title: '聊天模型 — Large',
+    hint: '用于处理复杂任务的重量级模型——在聊天框下拉菜单中切换。通常较慢，单条消息可能费用更高。',
     modelPlaceholder: 'z-ai/glm-5.2'
   },
   {
     id: 'image',
-    title: 'Image model',
-    hint: 'Runs the assistant’s image helpers — reading images you attach and play-testing your game with screenshots — so it must accept image input.',
+    title: '图像模型',
+    hint: '助手的图像辅助功能——读取你附加的图像、用截图测试你的游戏——必须支持图像输入。',
     modelPlaceholder: 'moonshotai/kimi-k2.7-code'
   }
 ]
@@ -76,18 +79,18 @@ function initSlot(stored: ModelSlotStatus): SlotState {
 }
 
 const THINKING_CHOICES: { value: ThinkingMode; label: string }[] = [
-  { value: 'default', label: 'Default (model decides)' },
-  { value: 'enabled', label: 'Enabled' },
-  { value: 'disabled', label: 'Disabled' }
+  { value: 'default', label: '默认（由模型决定）' },
+  { value: 'enabled', label: '开启' },
+  { value: 'disabled', label: '关闭' }
 ]
 
 const EFFORT_CHOICES: { value: ReasoningEffort; label: string }[] = [
-  { value: 'default', label: 'Default (model decides)' },
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
-  { value: 'xhigh', label: 'XHigh' },
-  { value: 'max', label: 'Max' }
+  { value: 'default', label: '默认（由模型决定）' },
+  { value: 'low', label: '低' },
+  { value: 'medium', label: '中等' },
+  { value: 'high', label: '高' },
+  { value: 'xhigh', label: '极高' },
+  { value: 'max', label: '最大' }
 ]
 
 /**
@@ -96,9 +99,10 @@ const EFFORT_CHOICES: { value: ReasoningEffort; label: string }[] = [
  * the actual field only appears once the user asks to change it.
  */
 function ConfiguredButton({ onClick }: { onClick: () => void }): React.JSX.Element {
+  const t = useTranslation()
   return (
     <button type="button" className="btn btn-ghost setup-configured-btn" onClick={onClick}>
-      Already configured. Click to update.
+      {t('Already configured. Click to update.')}
     </button>
   )
 }
@@ -131,6 +135,7 @@ function ModelSection(props: {
   onRevealKey: () => void
   onSubmit: () => void
 }): React.JSX.Element {
+  const t = useTranslation()
   return (
     <div className="setup-section">
       <div>
@@ -139,7 +144,7 @@ function ModelSection(props: {
       </div>
 
       <label className="setup-field">
-        <span className="setup-label">API endpoint</span>
+        <span className="setup-label">{t('API endpoint')}</span>
         <input
           className="text-input"
           value={props.endpoint}
@@ -151,7 +156,7 @@ function ModelSection(props: {
       </label>
 
       <label className="setup-field">
-        <span className="setup-label">Model</span>
+        <span className="setup-label">{t('Model')}</span>
         <input
           className="text-input"
           value={props.model}
@@ -166,8 +171,9 @@ function ModelSection(props: {
         <label
           className="setup-field"
           title="Whether the model thinks before answering — sent as the standard OpenAI `thinking` field. Default sends nothing."
+          aria-label={t('Thinking: sent as the standard OpenAI `thinking` field. Default sends nothing.')}
         >
-          <span className="setup-label">Thinking</span>
+          <span className="setup-label">{t('Thinking')}</span>
           <select
             className="setup-select"
             value={props.thinking}
@@ -183,8 +189,9 @@ function ModelSection(props: {
         <label
           className="setup-field"
           title="How hard the model thinks — sent as the standard OpenAI `reasoning_effort` field. Default sends nothing; not every model accepts every level."
+          aria-label={t('Reasoning effort: sent as the standard OpenAI `reasoning_effort` field.')}
         >
-          <span className="setup-label">Reasoning effort</span>
+          <span className="setup-label">{t('Reasoning effort')}</span>
           <select
             className="setup-select"
             value={props.effort}
@@ -200,7 +207,7 @@ function ModelSection(props: {
       </div>
 
       <div className="setup-field">
-        <span className="setup-label">API key</span>
+        <span className="setup-label">{t('API key')}</span>
         {props.keyHidden ? (
           <ConfiguredButton onClick={props.onRevealKey} />
         ) : (
@@ -231,6 +238,7 @@ function ModelSection(props: {
  * optional 3D asset generation (Tencent HY 3D).
  */
 export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JSX.Element {
+  const t = useTranslation()
   const [tab, setTab] = useState<SetupTab>('agent')
   const [slots, setSlots] = useState<Record<SlotId, SlotState>>(() => ({
     medium: initSlot(status.medium),
@@ -245,6 +253,26 @@ export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JS
 
   const [tencentRevealed, setTencentRevealed] = useState(!status.hy3dConfigured)
   const [openaiKeyRevealed, setOpenaiKeyRevealed] = useState(!status.gptImageConfigured)
+
+  const [comfyuiUrl, setComfyuiUrl] = useState('')
+  const [comfyuiUrlRevealed, setComfyuiUrlRevealed] = useState(!status.comfyuiConfigured)
+  const [comfyuiBusy, setComfyuiBusy] = useState(false)
+  const [comfyuiError, setComfyuiError] = useState<string | null>(null)
+
+  // Seed the URL field from the stored address so an already-configured
+  // ComfyUI instance shows its actual saved value (not a default) when the
+  // tab is first viewed. Defaults to localhost:8188 when nothing is stored.
+  useEffect(() => {
+    if (status.comfyuiConfigured) {
+      window.api.getComfyUIConfig().then((result) => {
+        if (result.ok && result.data.apiUrl) {
+          setComfyuiUrl(result.data.apiUrl)
+        } else {
+          setComfyuiUrl(`http://127.0.0.1:${COMFYUI_DEFAULT_PORT}`)
+        }
+      })
+    }
+  }, [status.comfyuiConfigured])
 
   const updateSlot = (id: SlotId, patch: Partial<SlotState>): void =>
     setSlots((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }))
@@ -264,12 +292,12 @@ export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JS
 
   const keyPlaceholder = (id: SlotId): string => {
     if (status[id].configured && norm(slots[id].endpoint) === norm(status[id].endpoint)) {
-      return 'Leave blank to keep the stored key'
+      return t('Leave blank to keep the stored key')
     }
     if (id !== 'medium' && norm(slots[id].endpoint) === norm(slots.medium.endpoint)) {
-      return 'Leave blank to use the Medium model’s API key'
+      return t('Leave blank to use the Medium model\'s API key')
     }
-    return id === 'medium' && !status.medium.configured ? 'Your API key' : 'API key for this endpoint'
+    return id === 'medium' && !status.medium.configured ? t('Your API key') : t('API key for this endpoint')
   }
 
   // Save applies every tab at once, so a validation error may concern a tab
@@ -279,18 +307,32 @@ export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JS
     setTab(where)
   }
 
+  const saveComfyUI = async (): Promise<void> => {
+    setComfyuiBusy(true)
+    setComfyuiError(null)
+    const result = await window.api.saveComfyUIConfig(comfyuiUrl)
+    setComfyuiBusy(false)
+    if (!result.ok) {
+      setComfyuiError(result.error)
+      return
+    }
+    if (result.data.configured) {
+      onConfigured({ ...status, comfyuiConfigured: true })
+    }
+  }
+
   const save = async (): Promise<void> => {
     for (const { id, title } of MODEL_SLOTS) {
       if (!covered(id)) {
         fail(
-          `"${title}" has no usable API key — enter one, or point its endpoint at another section's endpoint to share that key.`,
+          `"${title}" 没有可用的 API 密钥——请输入一个，或将其端点指向其他段的端点以共享密钥。`,
           'agent'
         )
         return
       }
     }
     if (!!tencentId.trim() !== !!tencentKey.trim()) {
-      fail('Enter both the Tencent SecretId and SecretKey (or leave both blank).', '3d')
+      fail(t('Enter both the Tencent SecretId and SecretKey (or leave both blank).'), '3d')
       return
     }
     setBusy(true)
@@ -308,7 +350,8 @@ export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JS
       image: slotRequest('image'),
       tencentSecretId: tencentId,
       tencentSecretKey: tencentKey,
-      openaiApiKey: openaiKey
+      openaiApiKey: openaiKey,
+      comfyuiApiUrl: comfyuiUrl
     })
     setBusy(false)
     if (!result.ok) {
@@ -317,7 +360,7 @@ export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JS
     }
     const broken = MODEL_SLOTS.find(({ id }) => !result.data[id].configured)
     if (broken) {
-      setError(`The "${broken.title}" endpoint still has no usable credential — double-check its API key.`)
+      setError(`"${broken.title}" 端点仍然没有可用的凭据——请检查其 API 密钥。`)
     } else {
       onConfigured(result.data)
       onClose?.()
@@ -328,7 +371,7 @@ export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JS
     <div className="setup-overlay">
       <div className="setup-card">
         {onClose && (
-          <button className="icon-btn setup-close" onClick={onClose} title="Close">
+          <button className="icon-btn setup-close" onClick={onClose} title={t('Close')}>
             <XIcon size={12} />
           </button>
         )}
@@ -337,11 +380,10 @@ export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JS
             <SparkIcon size={18} />
           </span>
           <div>
-            <h2 className="setup-title">{status.configured ? 'AI settings' : 'Connect your AI assistant'}</h2>
+            <h2 className="setup-title">{status.configured ? t('AI settings') : t('Connect your AI assistant')}</h2>
             <p className="setup-sub">
-              GenieEngine's assistant is powered by OpenCode: Medium and Large chat models you can
-              switch between per message, plus image-enabled helpers that read your images and
-              play-test your game.
+              GenieEngine 的助手由 OpenCode 驱动：Medium 和 Large 聊天模型可在每条消息间切换，
+              加上图像辅助功能可读取你的图像并测试你的游戏。
             </p>
           </div>
         </div>
@@ -382,7 +424,7 @@ export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JS
                 keyPlaceholder={keyPlaceholder(id)}
                 keyHint={
                   id === 'medium'
-                    ? 'Stored locally in OpenCode’s credential file — it never leaves your machine or enters your game’s code.'
+                    ? '本地存储在 OpenCode 的凭据文件中——永远不会离开你的设备或进入你的游戏代码。'
                     : undefined
                 }
                 keyHidden={status[id].configured && !slots[id].keyRevealed}
@@ -394,16 +436,51 @@ export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JS
           </>
         )}
 
-        {tab === '2d' && (
+        {tab === 'comfyui' && (
           <>
             <span className="setup-hint">
-              Add an OpenAI API key to let the assistant generate 2D art — sprites, icons, UI — as
-              transparent 1024×1024 PNGs saved into your game's assets folder. Only OpenAI's
-              gpt-image-1.5 model is supported right now.
+              输入本地 ComfyUI 实例的 API 地址（默认端口 {COMFYUI_DEFAULT_PORT}），让助手通过动态构建 workflow JSON 生成 2D 图片并保存到游戏资源文件夹中。ComfyUI 必须在 GenieEngine 启动时处于运行状态。
             </span>
 
             <div className="setup-field">
-              <span className="setup-label">OpenAI API key</span>
+              <span className="setup-label">{t('ComfyUI API address')}</span>
+              {status.comfyuiConfigured && !comfyuiUrlRevealed ? (
+                <ConfiguredButton onClick={() => setComfyuiUrlRevealed(true)} />
+              ) : (
+                <input
+                  className="text-input"
+                  value={comfyuiUrl}
+                  spellCheck={false}
+                  autoCapitalize="off"
+                  autoComplete="off"
+                  autoFocus={status.comfyuiConfigured}
+                  onChange={(e) => setComfyuiUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && void saveComfyUI()}
+                  placeholder={`http://127.0.0.1:${COMFYUI_DEFAULT_PORT}`}
+                />
+              )}
+            </div>
+
+            {comfyuiError && <div className="error-banner small">{comfyuiError}</div>}
+
+            <button
+              className="btn btn-primary"
+              disabled={busy || comfyuiBusy}
+              onClick={() => void saveComfyUI()}
+            >
+              {comfyuiBusy ? t('Saving…') : t('Save')}
+            </button>
+          </>
+        )}
+
+        {tab === '2d' && (
+          <>
+            <span className="setup-hint">
+              添加 OpenAI API 密钥以让助手生成 2D 美术资源——精灵图、图标、UI——以透明 1024×1024 PNG 格式保存到游戏资源文件夹中。目前仅支持 OpenAI 的 gpt-image-1.5 模型。
+            </span>
+
+            <div className="setup-field">
+              <span className="setup-label">{t('OpenAI API key')}</span>
               {status.gptImageConfigured && !openaiKeyRevealed ? (
                 <ConfiguredButton onClick={() => setOpenaiKeyRevealed(true)} />
               ) : (
@@ -416,7 +493,7 @@ export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JS
                   autoFocus={status.gptImageConfigured}
                   onChange={(e) => setOpenaiKey(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && void save()}
-                  placeholder={status.gptImageConfigured ? 'Leave blank to keep the stored key' : 'sk-…'}
+                  placeholder={status.gptImageConfigured ? t('Leave blank to keep the stored key') : t('OpenAI API key placeholder')}
                 />
               )}
             </div>
@@ -426,19 +503,18 @@ export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JS
         {tab === '3d' && (
           <>
             <span className="setup-hint">
-              Add Tencent Cloud credentials to let the assistant generate 3D models saved into your
-              game's assets folder. Only Tencent's HY 3D model is supported right now.
+              添加腾讯云凭据以让助手生成 3D 模型并保存到游戏资源文件夹中。目前仅支持腾讯云的 HY 3D 模型。
             </span>
 
             {status.hy3dConfigured && !tencentRevealed ? (
               <div className="setup-field">
-                <span className="setup-label">Tencent credentials</span>
+                <span className="setup-label">{t('Tencent credentials')}</span>
                 <ConfiguredButton onClick={() => setTencentRevealed(true)} />
               </div>
             ) : (
               <>
                 <label className="setup-field">
-                  <span className="setup-label">Tencent SecretId</span>
+                  <span className="setup-label">{t('Tencent SecretId')}</span>
                   <input
                     className="text-input"
                     value={tencentId}
@@ -447,12 +523,12 @@ export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JS
                     autoComplete="off"
                     autoFocus={status.hy3dConfigured}
                     onChange={(e) => setTencentId(e.target.value)}
-                    placeholder={status.hy3dConfigured ? 'Leave blank to keep the stored value' : 'AKID…'}
+                    placeholder={status.hy3dConfigured ? t('Leave blank to keep the stored value') : t('akid…')}
                   />
                 </label>
 
                 <label className="setup-field">
-                  <span className="setup-label">Tencent SecretKey</span>
+                  <span className="setup-label">{t('Tencent SecretKey')}</span>
                   <input
                     className="text-input"
                     type="password"
@@ -461,7 +537,7 @@ export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JS
                     autoComplete="off"
                     onChange={(e) => setTencentKey(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && void save()}
-                    placeholder={status.hy3dConfigured ? 'Leave blank to keep the stored value' : 'Your Tencent Cloud SecretKey'}
+                    placeholder={status.hy3dConfigured ? t('Leave blank to keep the stored value') : t('Your Tencent Cloud SecretKey')}
                   />
                 </label>
               </>
@@ -472,7 +548,7 @@ export function SetupOverlay({ status, onConfigured, onClose }: Props): React.JS
         {error && <div className="error-banner small">{error}</div>}
 
         <button className="btn btn-primary setup-connect" disabled={busy} onClick={() => void save()}>
-          {busy ? 'Saving…' : status.configured ? 'Save' : 'Connect'}
+          {busy ? t('Saving…') : status.configured ? t('Save') : t('Connect')}
         </button>
       </div>
     </div>

@@ -7,6 +7,7 @@ import { SetupOverlay } from './components/SetupOverlay'
 import { TitleBar } from './components/TitleBar'
 import { Welcome } from './components/Welcome'
 import { Workspace } from './components/Workspace'
+import { useTranslation } from './i18n/useTranslation'
 
 /** Which panel occupies the center pane. */
 type CenterView = 'game' | 'ecs'
@@ -20,6 +21,7 @@ const SIDEBAR_MIN = 260
 const SIDEBAR_MAX = 560
 
 export function App(): React.JSX.Element {
+  const t = useTranslation()
   const [booted, setBooted] = useState(false)
   const [project, setProject] = useState<ProjectInfo | null>(null)
   const [recents, setRecents] = useState<ProjectInfo[]>([])
@@ -210,13 +212,13 @@ export function App(): React.JSX.Element {
                   className={centerView === 'game' ? 'center-tab active' : 'center-tab'}
                   onClick={() => setCenterView('game')}
                 >
-                  Game
+                  {t('Game')}
                 </button>
                 <button
                   className={centerView === 'ecs' ? 'center-tab active' : 'center-tab'}
                   onClick={() => setCenterView('ecs')}
                 >
-                  ECS
+                  {t('ECS')}
                 </button>
               </div>
             )}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { EcsNode } from '../../../shared/types'
+import { useTranslation } from '../i18n/useTranslation'
 
 /**
  * ECS viewer: entities / components / systems as three linked columns, with
@@ -10,9 +11,9 @@ import type { EcsNode } from '../../../shared/types'
  */
 
 const COLUMNS = [
-  { kind: 'entity', title: 'Entities' },
-  { kind: 'component', title: 'Components' },
-  { kind: 'system', title: 'Systems' }
+  { kind: 'entity', title: '实体' },
+  { kind: 'component', title: '组件' },
+  { kind: 'system', title: '系统' }
 ] as const
 
 const ECS_KINDS = new Set<string>(COLUMNS.map((c) => c.kind))
@@ -28,6 +29,7 @@ interface Anchor {
 }
 
 export function EcsPanel(): React.JSX.Element {
+  const t = useTranslation()
   const [nodes, setNodes] = useState<EcsNode[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pinned, setPinned] = useState<string | null>(null)
@@ -145,7 +147,7 @@ export function EcsPanel(): React.JSX.Element {
     return (
       <div className="ecs-panel">
         <div className="ecs-empty">
-          <h2>Couldn&apos;t scan the project</h2>
+          <h2>{t('Couldn\'t scan the project')}</h2>
           <p className="muted">{error}</p>
         </div>
       </div>
@@ -157,12 +159,10 @@ export function EcsPanel(): React.JSX.Element {
     return (
       <div className="ecs-panel">
         <div className="ecs-empty">
-          <h2>No ECS files yet</h2>
+          <h2>{t('No ECS files yet')}</h2>
           <p className="muted">
-            This view maps your game&apos;s entities, components and systems from the
-            <code> #=== genieengine ===</code> headers the assistant puts at the top of every code
-            file. Ask it to build a feature — or to refactor existing code to the ECS structure —
-            and the network will appear here.
+            此视图根据助手在每个代码文件顶部添加的 <code> #=== genieengine ===</code> 头信息来映射你的游戏实体、组件和系统。
+            让助手构建功能——或将现有代码重构为 ECS 结构——网络图将在此处显示。
           </p>
         </div>
       </div>
@@ -190,7 +190,7 @@ export function EcsPanel(): React.JSX.Element {
                 <span className="ecs-col-count">{graph.byKind[col.kind].length}</span>
               </div>
               {graph.byKind[col.kind].length === 0 && (
-                <div className="ecs-col-empty">None yet</div>
+                <div className="ecs-col-empty">{t('None yet')}</div>
               )}
               {graph.byKind[col.kind].map((n) => (
                 <div
@@ -221,7 +221,7 @@ export function EcsPanel(): React.JSX.Element {
 
         {graph.others.length > 0 && (
           <div className="ecs-others">
-            <span className="ecs-others-label">Other files</span>
+            <span className="ecs-others-label">{t('Other files')}</span>
             <div className="ecs-others-list">
               {graph.others.map((n) => (
                 <button
@@ -258,7 +258,7 @@ export function EcsPanel(): React.JSX.Element {
             ))}
             {focusNode.uses.length > 0 && (
               <div className="ecs-detail-uses">
-                <span className="ecs-uses-label">uses</span>
+                <span className="ecs-uses-label">{t('uses')}</span>
                 {focusNode.uses.map((u) => (
                   <span key={u} className="ecs-use-chip">
                     {u}
@@ -269,7 +269,7 @@ export function EcsPanel(): React.JSX.Element {
           </>
         ) : (
           <span className="ecs-detail-hint muted">
-            Hover a node to preview its connections and description — click to pin it.
+            悬停节点预览其连接和描述——点击固定。
           </span>
         )}
       </div>

@@ -4,6 +4,9 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { applyAgentConfig, configuredImageModel } from './opencode-setup'
+// The default ComfyUI port is passed to the spawned bridge as argv so its
+// tool description (see mcp-bridge.mjs) matches the app's setup panel.
+import { COMFYUI_DEFAULT_PORT } from './comfyui'
 
 /**
  * Keeps GenieEngine's entries in the user's global OpenCode config
@@ -76,7 +79,7 @@ export function genieengineMcpEntry(): Record<string, unknown> | null {
   if (!bridgePath) return null
   return {
     type: 'local',
-    command: [process.execPath, bridgePath],
+    command: [process.execPath, bridgePath, String(COMFYUI_DEFAULT_PORT)],
     enabled: true,
     environment: { ELECTRON_RUN_AS_NODE: '1' }
   }

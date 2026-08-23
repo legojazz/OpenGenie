@@ -26,6 +26,7 @@ import {
   undoChat
 } from './services/opencode'
 import { getSetupStatus, saveSetup } from './services/opencode-setup'
+import { getComfyUIApiUrl, isComfyUIConfigured, saveComfyUIConfig } from './services/comfyui'
 import { cancelExport, revealExport, runExport } from './services/export'
 import type { ExportPlatform } from '../shared/types'
 import { createProject, openProject, projectInfoFor } from './services/projects'
@@ -181,6 +182,16 @@ export function registerIpcHandlers(): void {
   handle('chat:saveSetup', async (request: SetupRequest) => {
     await saveSetup(request)
     return getSetupStatus()
+  })
+  handle('chat:comfyuiSetupStatus', async (): Promise<{ configured: boolean }> => ({
+    configured: await isComfyUIConfigured()
+  }))
+  handle('chat:comfyuiConfig', async (): Promise<{ apiUrl: string | null }> => ({
+    apiUrl: await getComfyUIApiUrl()
+  }))
+  handle('chat:saveComfyUIConfig', async (apiUrl: string) => {
+    await saveComfyUIConfig(apiUrl)
+    return { configured: await isComfyUIConfigured() }
   })
 
   // ---- Export ----------------------------------------------------------------

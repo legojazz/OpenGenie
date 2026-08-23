@@ -14,6 +14,7 @@ import {
   PhonePortraitIcon,
   ShareIcon
 } from './Icons'
+import { useTranslation } from '../i18n/useTranslation'
 
 interface Props {
   project: ProjectInfo | null
@@ -35,23 +36,23 @@ const ASPECT_OPTIONS: {
   shortLabel: string
   icon: React.JSX.Element
 }[] = [
-  { mode: 'any', label: 'Any Aspect Ratio', shortLabel: 'Any', icon: <AspectAnyIcon size={14} /> },
+  { mode: 'any', label: '任意比例', shortLabel: '任意', icon: <AspectAnyIcon size={14} /> },
   {
     mode: 'desktop',
-    label: 'Desktop, TV, Standard 16:9',
-    shortLabel: 'Desktop',
+    label: '桌面/电视，标准 16:9',
+    shortLabel: '桌面',
     icon: <MonitorIcon size={14} />
   },
   {
     mode: 'mobile-portrait',
-    label: 'Mobile Vertical',
-    shortLabel: 'Portrait',
+    label: '手机竖屏',
+    shortLabel: '竖屏',
     icon: <PhonePortraitIcon size={14} />
   },
   {
     mode: 'mobile-landscape',
-    label: 'Mobile Horizontal',
-    shortLabel: 'Landscape',
+    label: '手机横屏',
+    shortLabel: '横屏',
     icon: <PhoneLandscapeIcon size={14} />
   }
 ]
@@ -64,6 +65,7 @@ function RunControls({
   onPlay,
   onStop
 }: Pick<Props, 'gameState' | 'aspect' | 'onSetAspect' | 'onPlay' | 'onStop'>): React.JSX.Element {
+  const t = useTranslation()
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const { status } = gameState
@@ -83,7 +85,7 @@ function RunControls({
     <div className="run-split" ref={menuRef}>
       <button
         className={`btn ${btnKind} run-caret`}
-        title="Game preview aspect ratio"
+        title={t('Game preview aspect ratio')}
         onClick={() => setOpen((v) => !v)}
       >
         {currentAspect?.icon}
@@ -94,16 +96,16 @@ function RunControls({
       </button>
       {status === 'stopped' ? (
         <button className="btn btn-play run-main" onClick={onPlay}>
-          Run
+          {t('Run')}
         </button>
       ) : (
         <button className="btn btn-stop run-main" onClick={onStop}>
-          {status === 'starting' ? 'Cancel' : 'Stop'}
+          {status === 'starting' ? t('Cancel') : t('Stop')}
         </button>
       )}
       {open && (
         <div className="run-menu">
-          <div className="run-menu-title">Preview aspect ratio</div>
+          <div className="run-menu-title">{t('Preview aspect ratio')}</div>
           {ASPECT_OPTIONS.map((option) => (
             <button
               key={option.mode}
@@ -141,12 +143,13 @@ export function TitleBar({
   advancedMode,
   onToggleAdvancedMode
 }: Props): React.JSX.Element {
+  const t = useTranslation()
   const { status } = gameState
   return (
     <header className="titlebar">
       <div className="titlebar-left">
         {project && (
-          <button className="icon-btn" title="Back to projects" onClick={onHome}>
+          <button className="icon-btn" title={t('Back to projects')} onClick={onHome}>
             <HomeIcon />
           </button>
         )}
@@ -171,14 +174,14 @@ export function TitleBar({
         {project && status !== 'stopped' && (
           <span className="status-pill">
             <span className={status === 'running' ? 'status-dot running' : 'status-dot starting'} />
-            {status !== 'running' ? 'Starting…' : gameState.mode === 'test' ? 'AI testing' : 'Running'}
+            {status !== 'running' ? t('Starting…') : gameState.mode === 'test' ? t('AI testing') : t('Running')}
           </span>
         )}
         {project && <AdvancedToggle value={advancedMode} onChange={onToggleAdvancedMode} />}
         {project && (
           <button
             className="icon-btn"
-            title="AI settings (coding agent, 2D & 3D asset generation)"
+            title={t('AI settings (coding agent, 2D & 3D asset generation)')}
             onClick={onOpenSettings}
           >
             <GearIcon size={14} />
@@ -186,8 +189,8 @@ export function TitleBar({
         )}
         {project && <DiscordButton />}
         {project && (
-          <button className="btn btn-ghost btn-sm" title="Export your game" onClick={onExport}>
-            <ShareIcon size={13} /> Export
+          <button className="btn btn-ghost btn-sm" title={t('Export your game')} onClick={onExport}>
+            <ShareIcon size={13} /> {t('Export your game')}
           </button>
         )}
       </div>

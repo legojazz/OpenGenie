@@ -10,6 +10,7 @@ import {
   RefreshIcon,
   VSCodeLogoIcon
 } from './Icons'
+import { useTranslation } from '../i18n/useTranslation'
 
 interface Props {
   project: ProjectInfo
@@ -23,6 +24,7 @@ interface Props {
  * tree does not collapse when the AI changes files.
  */
 export function FilesPanel({ project, refreshToken }: Props): React.JSX.Element {
+  const t = useTranslation()
   const [dirs, setDirs] = useState<Record<string, FileEntry[]>>({})
   const [openDirs, setOpenDirs] = useState<Set<string>>(new Set())
   const [selected, setSelected] = useState<string | null>(null)
@@ -106,7 +108,7 @@ export function FilesPanel({ project, refreshToken }: Props): React.JSX.Element 
               else void openExternal('vscode', entry.path)
             }
           }}
-          title={entry.isDirectory ? entry.name : `${entry.name} — double-click to open in VS Code`}
+          title={entry.isDirectory ? entry.name : `${entry.name} — 双击以在 VS Code 中打开`}
         >
           {Array.from({ length: depth }, (_, i) => (
             <span key={i} className="indent-guide" />
@@ -131,10 +133,10 @@ export function FilesPanel({ project, refreshToken }: Props): React.JSX.Element 
           {project.name}
         </span>
         <span className="header-actions push-right">
-          <button className="icon-btn sm" title="Collapse all" onClick={() => setOpenDirs(new Set())}>
+          <button className="icon-btn sm" title={t('Collapse all')} onClick={() => setOpenDirs(new Set())}>
             <CollapseAllIcon size={14} />
           </button>
-          <button className="icon-btn sm" title="Refresh" onClick={refreshAll}>
+          <button className="icon-btn sm" title={t('Refresh')} onClick={refreshAll}>
             <RefreshIcon size={14} />
           </button>
         </span>
@@ -145,7 +147,7 @@ export function FilesPanel({ project, refreshToken }: Props): React.JSX.Element 
           <VSCodeLogoIcon size={14} /> VS Code
         </button>
         <button className="open-btn" onClick={() => void openExternal('godot')}>
-          <GodotLogoIcon size={14} /> Godot Editor
+          <GodotLogoIcon size={14} /> Godot 编辑器
         </button>
       </div>
 

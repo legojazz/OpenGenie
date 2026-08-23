@@ -4,6 +4,7 @@ import { ChatPanel } from './ChatPanel'
 import { FilesPanel } from './FilesPanel'
 import { GitPanel } from './GitPanel'
 import { FolderIcon, GitBranchIcon, SparkIcon } from './Icons'
+import { useTranslation } from '../i18n/useTranslation'
 
 type Tab = 'chat' | 'files' | 'git'
 
@@ -25,6 +26,7 @@ const TABS: { id: Tab; label: string; icon: React.JSX.Element }[] = [
  * CSS) so chat history, expanded folders and git state survive tab switches.
  */
 export function Workspace({ project, width, opencodeAvailable, advancedMode }: Props): React.JSX.Element {
+  const t = useTranslation()
   const [tab, setTab] = useState<Tab>('chat')
   // Bumped when the AI finishes work or the window refocuses, so the files
   // and git panels refresh to reflect changes made outside the UI.
@@ -45,14 +47,14 @@ export function Workspace({ project, width, opencodeAvailable, advancedMode }: P
     <aside className="workspace" style={{ width }}>
       {advancedMode && (
         <nav className="tabbar">
-          {TABS.map((t) => (
+          {TABS.map((t_) => (
             <button
-              key={t.id}
-              className={tab === t.id ? 'tab active' : 'tab'}
-              onClick={() => setTab(t.id)}
+              key={t_.id}
+              className={tab === t_.id ? 'tab active' : 'tab'}
+              onClick={() => setTab(t_.id)}
             >
-              {t.icon}
-              <span className="tab-label">{t.label}</span>
+              {t_.icon}
+              <span className="tab-label">{t(t_.label)}</span>
             </button>
           ))}
         </nav>

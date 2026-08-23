@@ -13,6 +13,7 @@ import type {
 import { getChatModelRefs, setChatModelRefs } from '../state'
 import { isGptImageConfigured, saveGptImageConfig } from './gptimage'
 import { isHy3dConfigured, saveHy3dCredentials } from './hy3d'
+import { isComfyUIConfigured, saveComfyUIConfig } from './comfyui'
 import { shutdownChat } from './opencode'
 
 /**
@@ -346,7 +347,8 @@ export async function getSetupStatus(): Promise<SetupStatus> {
     large,
     image,
     hy3dConfigured: await isHy3dConfigured(),
-    gptImageConfigured: await isGptImageConfigured()
+    gptImageConfigured: await isGptImageConfigured(),
+    comfyuiConfigured: await isComfyUIConfigured()
   }
 }
 
@@ -378,6 +380,7 @@ export async function saveSetup(request: SetupRequest): Promise<void> {
     await saveHy3dCredentials(request.tencentSecretId ?? '', request.tencentSecretKey ?? '')
   }
   await saveGptImageConfig(request.openaiApiKey ?? '')
+  await saveComfyUIConfig(request.comfyuiApiUrl ?? '')
 
   const configFile = configPath()
   await mkdir(join(configFile, '..'), { recursive: true })

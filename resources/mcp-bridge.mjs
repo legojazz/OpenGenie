@@ -35,6 +35,10 @@ function readHarness() {
   // shared-file races harness.json has when several instances run at once
   // (e.g. dev + packaged: one quitting used to delete the other's file).
   const { GENIEENGINE_HARNESS_PORT: envPort, GENIEENGINE_HARNESS_TOKEN: envToken } = process.env
+  // Default port passed in by the app (see src/main/services/comfyui.ts) as
+  // argv[2], so this zero-dependency bridge doesn't import from the TS
+  // service. Kept in sync by the app; falls back to ComfyUI's default.
+  const COMFYUI_DEFAULT_PORT = Number(process.argv[2]) || 8188
   if (envPort && envToken) return { port: Number(envPort), token: envToken }
   try {
     return JSON.parse(readFileSync(join(userDataDir(), 'harness.json'), 'utf8'))
@@ -225,6 +229,49 @@ const GPT_IMAGE_TOOL = {
 }
 
 /**
+ * Offered only when the user has entered a ComfyUI API address in GenieEngine's
+ * setup panel (checked via /capabilities at list time). Uses a local ComfyUI
+ * instance to generate images by dynamically building a workflow JSON — the AI
+ * chooses the nodes, the model, and the sampling parameters.
+ */
+// ComfyUI workflow defaults (see src/main/services/comfyui.ts). Width, steps,
+// cfg scale, and checkpoint are tool-description only — the actual generation
+// runs through test-harness.ts, which reads the real values from the TS
+// service. The default PORT, however, is surfaced to the user in this tool's
+// description and must stay identical to the app's, so it is imported rather
+// than duplicated.
+const COMFYUI_DEFAULT_WIDTH = 1024
+const COMFYUI_DEFAULT_HEIGHT = 1024
+const COMFYUI_DEFAULT_STEPS = 20
+const COMFYUI_DEFAULT_CFG_SCALE = 3.5
+const COMFYUI_DEFAULT_CHECKPOINT = 'flux'
+
+const COMFYUI_TOOL = {
+  name: 'generate_2d_comfyui',
+  description:
+    'Generate a 2D image via the user\'s local ComfyUI instance (address configured in GenieEngine\'s AI settings under the ComfyUI tab). ' +
+    'Dynamically builds a workflow JSON with nodes the model chooses — the app supplies a minimal scaffold (checkpoint loader, prompt encoders, empty latent, KSampler, VAE decode, SaveImage), and the AI can extend it with any additional nodes. ' +
+    'Takes 10-300 seconds depending on workflow complexity and the local GPU. Returns the written file path plus the image. ' +
+    'Organize assets to mirror the ECS layout: folder "entities/e_player" for that entity\'s art, "ui" for HUD art, "shared" for reusable pieces. ' +
+    'If the user gives feedback on the preview, regenerate with the SAME folder and name so the files are replaced.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      prompt: { type: 'string', description: 'Text description of the image (one subject, style, colors, view angle).' },
+      folder: { type: 'string', description: 'Destination under assets/, mirroring the ECS structure — e.g. "entities/e_player", "ui", "shared".' },
+      name: { type: 'string', description: 'Asset name (lowercase slug), e.g. "spaceship".' },
+      width: { type: 'number', description: `Image width in pixels (default ${COMFYUI_DEFAULT_WIDTH}).` },
+      height: { type: 'number', description: `Image height in pixels (default ${COMFYUI_DEFAULT_HEIGHT}).` },
+      model: { type: 'string', description: `Checkpoint name to load (default "${COMFYUI_DEFAULT_CHECKPOINT}"). Must be installed in ComfyUI.` },
+      steps: { type: 'number', description: `Number of sampling steps (default ${COMFYUI_DEFAULT_STEPS}).` },
+      cfg_scale: { type: 'number', description: `Classifier-free guidance scale (default ${COMFYUI_DEFAULT_CFG_SCALE}).` },
+      seed: { type: 'number', description: 'Random seed (default random). Set to -1 for random.' }
+    },
+    required: ['prompt', 'folder', 'name']
+  }
+}
+
+/**
  * Offered only when the user has configured Tencent HY 3D credentials in
  * GenieEngine's setup panel (checked via /capabilities at list time).
  */
@@ -272,6 +319,7 @@ async function handle(request) {
     const tools = [...TOOLS]
     if (caps.hy3d) tools.push(HY3D_TOOL)
     if (caps.gptImage) tools.push(GPT_IMAGE_TOOL)
+    if (caps.comfyui) tools.push(COMFYUI_TOOL)
     send({ jsonrpc: '2.0', id, result: { tools } })
   } else if (method === 'tools/call') {
     const result = await callHarness(params.name, params.arguments ?? {})

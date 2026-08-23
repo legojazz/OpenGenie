@@ -172,6 +172,8 @@ export interface SetupStatus {
   hy3dConfigured: boolean
   /** True when an OpenAI key is stored (enables 2D image asset generation). */
   gptImageConfigured: boolean
+  /** True when a ComfyUI API address is stored (enables local 2D generation). */
+  comfyuiConfigured: boolean
 }
 
 /** One model slot's settings as submitted by the setup panel. */
@@ -197,6 +199,8 @@ export interface SetupRequest {
   tencentSecretId?: string
   tencentSecretKey?: string
   openaiApiKey?: string
+  /** ComfyUI local API address (e.g. http://127.0.0.1:8188); blank = unchanged. */
+  comfyuiApiUrl?: string
 }
 
 /** A generated asset preview pushed into the chat so the user can react to it. */
@@ -421,6 +425,12 @@ export interface GenieEngineApi {
   getSetupStatus(): Promise<Result<SetupStatus>>
   /** Credential fields left blank = leave that provider's setup unchanged. */
   saveSetup(request: SetupRequest): Promise<Result<SetupStatus>>
+  /** ComfyUI setup status (address configured + URL-valid). */
+  getComfyUISetupStatus(): Promise<Result<{ configured: boolean }>>
+  /** Current stored ComfyUI API address (null when unconfigured). */
+  getComfyUIConfig(): Promise<Result<{ apiUrl: string | null }>>
+  /** Store the ComfyUI API address; empty input keeps the stored value. */
+  saveComfyUIConfig(apiUrl: string): Promise<Result<{ configured: boolean }>>
   onChatPart(cb: (part: ChatPartUpdate) => void): () => void
   onChatDone(cb: (payload: ChatDonePayload) => void): () => void
   /** A generated 2D/3D asset preview to render in the chat (user can give feedback). */

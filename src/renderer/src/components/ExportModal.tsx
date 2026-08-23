@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ExportPlatform, ExportProgress } from '../../../shared/types'
 import { AndroidIcon, AppleIcon, CheckIcon, GlobeIcon, LinuxIcon, WindowsIcon, XIcon } from './Icons'
+import { useTranslation } from '../i18n/useTranslation'
 
 interface Props {
   projectName: string
@@ -12,13 +13,14 @@ const PLATFORMS: { id: ExportPlatform; label: string; icon: React.JSX.Element; n
   { id: 'windows', label: 'Windows', icon: <WindowsIcon size={15} /> },
   { id: 'linux', label: 'Linux', icon: <LinuxIcon size={15} /> },
   { id: 'web', label: 'Web', icon: <GlobeIcon size={15} /> },
-  { id: 'android', label: 'Android', icon: <AndroidIcon size={15} />, note: 'needs Android SDK' },
-  { id: 'ios', label: 'iOS', icon: <AppleIcon size={15} />, note: 'needs Xcode' }
+  { id: 'android', label: 'Android', icon: <AndroidIcon size={15} />, note: '需要 Android SDK' },
+  { id: 'ios', label: 'iOS', icon: <AppleIcon size={15} />, note: '需要 Xcode' }
 ]
 
 type PlatformState = { status: 'idle' | 'exporting' | 'success' | 'error'; message?: string }
 
 export function ExportModal({ projectName, onClose }: Props): React.JSX.Element {
+  const t = useTranslation()
   const [name, setName] = useState(projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'game')
   const [selected, setSelected] = useState<Set<ExportPlatform>>(new Set(['macos']))
   const [running, setRunning] = useState(false)
@@ -73,14 +75,14 @@ export function ExportModal({ projectName, onClose }: Props): React.JSX.Element 
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && !running && onClose()}>
       <div className="modal-card">
         <div className="modal-head">
-          <h2 className="modal-title">Export your game</h2>
-          <button className="icon-btn" title="Close" onClick={onClose} disabled={running}>
+          <h2 className="modal-title">{t('Export your game')}</h2>
+          <button className="icon-btn" title={t('Close')} onClick={onClose} disabled={running}>
             <XIcon size={13} />
           </button>
         </div>
 
         <label className="setup-field">
-          <span className="setup-label">Output name</span>
+          <span className="setup-label">{t('Output name')}</span>
           <input
             className="text-input"
             value={name}
@@ -91,7 +93,7 @@ export function ExportModal({ projectName, onClose }: Props): React.JSX.Element 
         </label>
 
         <div className="setup-field">
-          <span className="setup-label">Platforms</span>
+          <span className="setup-label">{t('Platforms')}</span>
           <div className="platform-grid">
             {PLATFORMS.map((platform) => {
               const on = selected.has(platform.id)
@@ -145,9 +147,9 @@ export function ExportModal({ projectName, onClose }: Props): React.JSX.Element 
               <strong>{PLATFORMS.find((p) => p.id === id)?.label}:</strong>{' '}
               {s.status === 'success' ? (
                 <>
-                  exported.{' '}
+                  已导出。{' '}
                   <button className="link-btn" onClick={() => void window.api.revealExport(s.message!)}>
-                    Reveal in Finder
+                    在 Finder 中显示
                   </button>
                 </>
               ) : (
@@ -161,15 +163,15 @@ export function ExportModal({ projectName, onClose }: Props): React.JSX.Element 
         <div className="modal-actions">
           {running ? (
             <button className="btn btn-ghost" onClick={cancel}>
-              Cancel export
+              {t('Cancel export')}
             </button>
           ) : (
             <button className="btn btn-ghost" onClick={onClose}>
-              Close
+              {t('Close')}
             </button>
           )}
           <button className="btn btn-primary" disabled={running || selected.size === 0} onClick={() => void start()}>
-            {running ? 'Exporting…' : `Export${selected.size > 1 ? ` (${selected.size})` : ''}`}
+            {running ? t('Exporting…') : `导出${selected.size > 1 ? ` (${selected.size})` : ''}`}
           </button>
         </div>
       </div>

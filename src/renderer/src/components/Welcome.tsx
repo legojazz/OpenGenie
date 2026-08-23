@@ -4,6 +4,7 @@ import logo from '../assets/logo.png'
 import { AdvancedToggle } from './AdvancedToggle'
 import { DiscordButton } from './DiscordButton'
 import { FolderIcon, GearIcon, PlusIcon } from './Icons'
+import { useTranslation } from '../i18n/useTranslation'
 
 interface Props {
   recents: ProjectInfo[]
@@ -25,6 +26,7 @@ export function Welcome({
   advancedMode,
   onToggleAdvancedMode
 }: Props): React.JSX.Element {
+  const t = useTranslation()
   const [creating, setCreating] = useState(false)
   const [name, setName] = useState('My First Game')
   const [parentDir, setParentDir] = useState('')
@@ -78,7 +80,7 @@ export function Welcome({
             <AdvancedToggle value={advancedMode} onChange={onToggleAdvancedMode} />
             <button
               className="icon-btn"
-              title="AI settings (coding agent, 2D & 3D asset generation)"
+              title={t('AI settings (coding agent, 2D & 3D asset generation)')}
               onClick={onOpenSettings}
             >
               <GearIcon size={16} />
@@ -86,22 +88,22 @@ export function Welcome({
             <DiscordButton />
           </div>
         </div>
-        <p className="tagline">The AI game engine. Describe your game — watch it come to life.</p>
+        <p className="tagline">{t('AI game engine. Describe your game — watch it come to life.')}</p>
 
         {!creating ? (
           <>
             <div className="welcome-actions">
               <button className="btn btn-primary btn-lg" onClick={() => setCreating(true)}>
-                <PlusIcon /> New Game
+                <PlusIcon /> {t('New Game')}
               </button>
               <button className="btn btn-ghost btn-lg" onClick={openDialog}>
-                <FolderIcon /> Open Project
+                <FolderIcon /> {t('Open Project')}
               </button>
             </div>
 
             {recents.length > 0 && (
               <div className="recents">
-                <h2 className="recents-title">Recent</h2>
+                <h2 className="recents-title">{t('Recent')}</h2>
                 {recents.map((r) => (
                   <button key={r.path} className="recent-item" onClick={() => openRecent(r.path)}>
                     <span className="recent-name">{r.name}</span>
@@ -114,7 +116,7 @@ export function Welcome({
         ) : (
           <div className="new-form">
             <label className="form-row">
-              <span className="label">Game name</span>
+              <span className="label">{t('Game name')}</span>
               <input
                 className="text-input"
                 value={name}
@@ -124,23 +126,22 @@ export function Welcome({
               />
             </label>
             <label className="form-row">
-              <span className="label">Location</span>
+              <span className="label">{t('Location')}</span>
               <div className="path-row">
                 <input
                   className="text-input path-input"
                   value={parentDir}
-                  placeholder="Choose where to store your game…"
+                  placeholder={t('Choose where to store your game…')}
                   onChange={(e) => setParentDir(e.target.value)}
                 />
                 <button className="btn btn-ghost" onClick={browse}>
-                  Browse…
+                  {t('Browse…')}
                 </button>
               </div>
             </label>
             {parentDir && (
               <p className="path-preview">
-                Will create <code>{parentDir}/{folderSlug}</code> with a starter Godot project and a
-                git repository.
+                {t('Will create ')}<code>{parentDir}/{folderSlug}</code>{t(' with a starter Godot project and a git repository.')}
               </p>
             )}
             <div className="welcome-actions">
@@ -149,10 +150,10 @@ export function Welcome({
                 disabled={busy || !name.trim() || !parentDir}
                 onClick={create}
               >
-                {busy ? 'Creating…' : 'Create Game'}
+                {busy ? t('Creating…') : t('Create Game')}
               </button>
               <button className="btn btn-ghost btn-lg" disabled={busy} onClick={() => setCreating(false)}>
-                Cancel
+                {t('Cancel')}
               </button>
             </div>
           </div>

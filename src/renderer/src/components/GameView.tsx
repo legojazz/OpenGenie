@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AspectMode, GameInputModifiers, GameState } from '../../../shared/types'
 import { PlayIcon, StopIcon, XIcon } from './Icons'
+import { useTranslation } from '../i18n/useTranslation'
 
 /** width/height ratios for enforced preview shapes (modern phones ≈ 19.5:9). */
 const ASPECT_RATIOS: Partial<Record<AspectMode, number>> = {
@@ -24,6 +25,7 @@ function modifiers(e: { shiftKey: boolean; ctrlKey: boolean; altKey: boolean; me
  * behind this transparent element) and forwards it to the game process.
  */
 function NativeGameOverlay(): React.JSX.Element {
+  const t = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
   const [cursor, setCursor] = useState('default')
 
@@ -99,6 +101,7 @@ function NativeGameOverlay(): React.JSX.Element {
  * mounted, so the AI's run can't be disturbed by clicks.
  */
 function TestLiveMonitor({ gameSize }: { gameSize: { width: number; height: number } }): React.JSX.Element {
+  const t = useTranslation()
   const areaRef = useRef<HTMLDivElement>(null)
   const screenRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -189,8 +192,9 @@ export function GameView({
   onDismissError,
   advancedMode
 }: Props): React.JSX.Element {
+  const t = useTranslation()
   const [logs, setLogs] = useState<string[]>([])
-  const [testShot, setTestShot] = useState<string | null>(null)
+  const testShot = useState<string | null>(null)[0]
   const consoleRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const areaRef = useRef<HTMLElement>(null)
@@ -223,6 +227,7 @@ export function GameView({
   }, [])
 
   // Live monitor: show the latest screenshot the AI captured while testing.
+  const [testShotState, setTestShot] = useState<string | null>(null)
   useEffect(() => window.api.onGameTestShot(setTestShot), [])
   useEffect(() => {
     if (state.status !== 'running' || state.mode !== 'test') setTestShot(null)
@@ -294,7 +299,7 @@ export function GameView({
       return (
         <div className="game-idle">
           <div className="spinner big" />
-          <h2>Starting your game…</h2>
+          <h2>{t('Starting your game…')}</h2>
         </div>
       )
     }
@@ -303,23 +308,23 @@ export function GameView({
       return (
         <div className={live ? 'game-running-card live' : 'game-running-card'}>
           <span className="status-dot starting big" />
-          <h2>AI test run in progress</h2>
+          <h2>{t('AI test run in progress')}</h2>
           <p className="muted">
             {live
-              ? 'Watch live as the assistant plays your game and checks its state.'
-              : testShot
-                ? 'Latest screenshot the assistant captured:'
+              ? t('Watch live as the assistant plays your game and checks its state.')
+              : testShotState
+                ? '助手捕获的最新截图：'
                 : state.view === 'external'
-                  ? 'The assistant is playing your game in its own window — screenshots it captures will appear here.'
-                  : 'The assistant is running your game off-screen — playing it, taking screenshots and checking its state.'}
+                  ? t('The assistant is playing your game in its own window — screenshots it captures will appear here.')
+                  : t('The assistant is running your game off-screen — playing it, taking screenshots and checking its state.')}
           </p>
           {live ? (
             <TestLiveMonitor gameSize={state.testGameSize!} />
           ) : (
-            testShot && <img className="test-monitor" src={testShot} alt="Latest AI test screenshot" />
+            testShotState && <img className="test-monitor" src={testShotState} alt="助手捕获的最新截图" />
           )}
           <button className="btn btn-stop" onClick={onStop}>
-            <StopIcon size={12} /> Stop
+            <StopIcon size={12} /> {t('Stop')}
           </button>
         </div>
       )
@@ -331,13 +336,12 @@ export function GameView({
         return (
           <div className="game-running-card">
             <span className="status-dot starting big" />
-            <h2>Your game is running in its own window</h2>
+            <h2>{t('Your game is running in its own window')}</h2>
             <p className="muted">
-              The in-app game view isn't available here, so your game opened as a separate
-              window. Play it there, and press Stop here when you're done.
+              {t('The in-app game view isn\'t available here, so your game opened as a separate window. Play it there, and press Stop here when you\'re done.')}
             </p>
             <button className="btn btn-stop" onClick={onStop}>
-              <StopIcon size={12} /> Stop
+              <StopIcon size={12} /> {t('Stop')}
             </button>
           </div>
         )
@@ -359,17 +363,16 @@ export function GameView({
     }
     return (
       <div className="game-idle">
-        <button className="play-hero" onClick={onPlay} title="Run your game">
+        <button className="play-hero" onClick={onPlay} title={t('Press Run to start your game')}>
           <PlayIcon size={30} />
         </button>
-        <h2>Press Run to start your game</h2>
+        <h2>{t('Press Run to start your game')}</h2>
         <p className="muted">
-          Your game runs right here in GenieEngine. Ask the assistant in the chat to build or change
-          anything.
+          {t('Your game runs right here in GenieEngine. Ask the assistant in the chat to build or change anything.')}
         </p>
         {!godotPath && (
           <button className="warning-chip" onClick={onLocateGodot}>
-            Bundled Godot engine missing — reinstall GenieEngine, or click to locate one
+            {t('Bundled Godot engine missing — reinstall GenieEngine, or click to locate one')}
           </button>
         )}
       </div>
@@ -389,7 +392,7 @@ export function GameView({
         <div className="stage-toolbar">
           <span
             className={`fps-badge${fps !== null && fps < 30 ? ' bad' : fps !== null && fps < 50 ? ' warn' : ''}`}
-            title="Frame rate measured in the game process. Per-minute stats (min/max/avg/1% low/0.1% low) are logged to .genieengine/perf.log"
+            title={t('Frame rate measured in the game process. Per-minute stats (min/max/avg/1% low/0.1% low) are logged to .genieengine/perf.log')}
           >
             {fps !== null ? `${Math.round(fps)} FPS` : '— FPS'}
           </span>
@@ -402,10 +405,10 @@ export function GameView({
             <span className="banner-actions">
               {error.toLowerCase().includes('godot') && (
                 <button className="btn btn-sm btn-ghost" onClick={onLocateGodot}>
-                  Locate Godot…
+                  {t('Locate Godot…')}
                 </button>
               )}
-              <button className="icon-btn" onClick={onDismissError} title="Dismiss">
+              <button className="icon-btn" onClick={onDismissError} title={t('Stop')}>
                 <XIcon size={12} />
               </button>
             </span>
@@ -416,17 +419,17 @@ export function GameView({
 
       {advancedMode && (
         <>
-          <div className="console-resize" onMouseDown={onConsoleDrag} title="Drag to resize console" />
+          <div className="console-resize" onMouseDown={onConsoleDrag} title={t('Drag to resize console')} />
           <div className="game-console" style={{ height: consoleHeight }}>
             <div className="console-header">
-              <span className="console-title">Output</span>
+              <span className="console-title">{t('Output')}</span>
               <button className="btn btn-sm btn-ghost" onClick={() => setLogs([])}>
-                Clear
+                {t('Clear')}
               </button>
             </div>
             <div className="console-body" ref={consoleRef}>
               {logs.length === 0 ? (
-                <span className="console-line muted">Game console output will appear here.</span>
+                <span className="console-line muted">{t('Game console output will appear here.')}</span>
               ) : (
                 logs.map((line, i) => (
                   <span key={i} className="console-line">

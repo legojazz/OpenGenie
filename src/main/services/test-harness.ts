@@ -19,6 +19,7 @@ import {
 } from './game'
 import { generateImageAsset, isGptImageConfigured } from './gptimage'
 import { generateAsset, isHy3dConfigured, type GenerateAssetRequest } from './hy3d'
+import { generateImageAsset as generateComfyUIAsset, isComfyUIConfigured } from './comfyui'
 import { downloadItchAsset, searchItchAssets } from './itch'
 import type { AssetPreview } from '../../shared/types'
 
@@ -243,6 +244,32 @@ async function dispatchTool(name: string, args: Record<string, unknown>): Promis
         imageMime: result.previewMime
       }
     }
+    case 'generate_2d_comfyui': {
+      const project = getCurrentProject()
+      if (!project) return { ok: false, text: 'No project is open in GenieEngine.' }
+      const result = await generateComfyUIAsset(project.path, {
+        prompt: String(args.prompt ?? ''),
+        folder: String(args.folder ?? ''),
+        name: String(args.name ?? ''),
+        width: typeof args.width === 'number' ? args.width : undefined,
+        height: typeof args.height === 'number' ? args.height : undefined,
+        model: typeof args.model === 'string' ? args.model : undefined,
+        steps: typeof args.steps === 'number' ? args.steps : undefined,
+        cfgScale: typeof args.cfg_scale === 'number' ? args.cfg_scale : undefined,
+        seed: typeof args.seed === 'number' ? args.seed : undefined
+      })
+      sendToRenderer('chat:files-changed')
+      pushAssetPreview(result.previewBase64, result.previewMime, String(args.name ?? 'asset'), result.files, '2d')
+      return {
+        ok: true,
+        text:
+          `2D asset generated via ComfyUI. Files written:\n${result.files.map((f) => `- ${f}`).join('\n')}\n` +
+          'Godot auto-imports it under res:// as a texture. ' +
+          'The user sees this preview in the chat and may reply with feedback; if they do, regenerate with the same folder and name.',
+        imageBase64: result.previewBase64,
+        imageMime: result.previewMime
+      }
+    }
     case 'itch_search': {
       const query = String(args.query ?? '').trim()
       if (!query) return { ok: false, text: 'Provide a "query" to search itch.io for.' }
@@ -302,7 +329,7 @@ export function startTestHarness(): void {
     // Which optional tools are available — the MCP bridge checks this at
     // startup so unconfigured tools are never offered to the model.
     if (req.method === 'GET' && req.url === '/capabilities') {
-      respond(200, { hy3d: await isHy3dConfigured(), gptImage: await isGptImageConfigured() })
+      respond(200, { hy3d: await isHy3dConfigured(), gptImage: await isGptImageConfigured(), comfyui: await isComfyUIConfigured() })
       return
     }
     if (req.method !== 'POST' || req.url !== '/tool') {

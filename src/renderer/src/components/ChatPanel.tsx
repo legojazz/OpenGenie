@@ -10,6 +10,7 @@ import type {
   ChatToolStatus
 } from '../../../shared/types'
 import { FileIcon, FolderIcon, PlusIcon, SearchIcon, SendIcon, SparkIcon, StopIcon, TerminalIcon, XIcon } from './Icons'
+import { useTranslation } from '../i18n/useTranslation'
 
 marked.setOptions({ gfm: true, breaks: true })
 
@@ -133,8 +134,7 @@ const NETWORK_ERROR_RE =
 
 /** Message shown in place of the raw error when a turn dies to a lost connection. */
 const DISCONNECTED_NOTICE =
-  'Disconnected — the internet connection was lost while the assistant was working. ' +
-  'Once you are back online, press Continue (or say "continue") to pick up where it left off.'
+  '已断开连接 — 等待网络恢复…'
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -152,9 +152,9 @@ interface Props {
 }
 
 const SUGGESTIONS = [
-  'Make a 2D platformer with a player that moves and jumps',
-  'Add a score counter to the screen',
-  'Give the game a title screen with a start button'
+  '制作一个有移动和跳跃功能的 2D 平台游戏',
+  '在屏幕上添加计分器',
+  '为游戏添加带有开始按钮的标题画面'
 ]
 
 /**
@@ -165,8 +165,8 @@ const SUGGESTIONS = [
 const MODEL_TIER_KEY = 'genieengine:chatModelTier'
 
 const MODEL_TIERS: { id: ChatModelTier; label: string }[] = [
-  { id: 'medium', label: 'Medium' },
-  { id: 'large', label: 'Large' }
+  { id: 'medium', label: '中等' },
+  { id: 'large', label: '大型' }
 ]
 
 interface SlashCommand {
@@ -175,9 +175,9 @@ interface SlashCommand {
 }
 
 const SLASH_COMMANDS: SlashCommand[] = [
-  { name: 'clear', description: 'Clear the chat history' },
-  { name: 'undo', description: 'Undo your last message and the file changes it made' },
-  { name: 'redo', description: 'Restore the last undone message' }
+  { name: 'clear', description: '清除聊天记录' },
+  { name: 'undo', description: '撤销上一条消息及其文件变更' },
+  { name: 'redo', description: '恢复最近撤销的消息' }
 ]
 
 /**
@@ -221,18 +221,19 @@ function toolLabel(tool: { name: string; title?: string; agent?: string }): stri
  * providers keep it encrypted), so the chat still visibly makes progress.
  */
 function ThinkingTicker(): React.JSX.Element {
+  const t = useTranslation()
   const [seconds, setSeconds] = useState(0)
   useEffect(() => {
     const timer = setInterval(() => setSeconds((s) => s + 1), 1000)
     return () => clearInterval(timer)
   }, [])
-  return <span>Thinking…{seconds >= 2 ? ` ${seconds}s` : ''}</span>
+  return <span>{t('Thinking…')}{seconds >= 2 ? ` ${seconds}s` : ''}</span>
 }
 
 function ToolChip({ part }: { part: AssistantPart }): React.JSX.Element {
   const status = part.tool?.status ?? 'running'
   // Failed calls explain themselves on hover (native tooltip).
-  const tooltip = status === 'error' ? `Failed: ${part.tool?.error || 'no error details reported'}` : undefined
+  const tooltip = status === 'error' ? `执行失败：${part.tool?.error || '无错误详情'}` : undefined
   return (
     <span className={`tool-chip ${status}${part.tool?.agent ? ' subagent' : ''}`} title={tooltip}>
       <span className="tool-chip-icon">{toolIcon(part.tool?.name ?? '')}</span>
@@ -257,6 +258,7 @@ function AssistantMessage({
   isFirst: boolean
   onAssetFeedback: (asset: AssetPreview) => void
 }): React.JSX.Element {
+  const t = useTranslation()
   const parts = msg.parts ?? []
   const last = parts[parts.length - 1]
 
@@ -284,22 +286,22 @@ function AssistantMessage({
     if (part.kind === 'text' && part.text) {
       blocks.push(<Markdown key={part.id} source={part.text} />)
     } else if (part.kind === 'image' && part.dataUrl) {
-      blocks.push(<img key={part.id} className="chat-shot" src={part.dataUrl} alt="Game screenshot from test run" />)
+      blocks.push(<img key={part.id} className="chat-shot" src={part.dataUrl} alt="测试运行截图" />)
     } else if (part.kind === 'asset' && part.asset) {
       const asset = part.asset
       blocks.push(
         <div key={part.id} className="asset-card">
-          <img className="asset-card-img" src={asset.dataUrl} alt={`Generated ${asset.kind} asset: ${asset.label}`} />
+          <img className="asset-card-img" src={asset.dataUrl} alt={`生成的 ${asset.kind} 资源：${asset.label}`} />
           <div className="asset-card-meta">
             <span className={`asset-kind-badge kind-${asset.kind}`}>{asset.kind === '3d' ? '3D' : '2D'}</span>
             <span className="asset-card-name">{asset.label}</span>
             <span className="asset-card-path">{asset.path}</span>
             <button
               className="btn btn-sm btn-ghost asset-feedback-btn"
-              title="Describe what to change — the assistant will regenerate this asset"
+              title="描述需要修改的内容——助手将重新生成该资源"
               onClick={() => onAssetFeedback(asset)}
             >
-              Request changes
+              {t('Request changes')}
             </button>
           </div>
         </div>
@@ -356,6 +358,7 @@ function QuestionCard({
   onAnswer: (answers: string[][]) => void
   onDismiss: () => void
 }): React.JSX.Element {
+  const t = useTranslation()
   const [selected, setSelected] = useState<string[][]>(() => request.questions.map(() => []))
   const [customs, setCustoms] = useState<string[]>(() => request.questions.map(() => ''))
   const [customOpen, setCustomOpen] = useState<boolean[]>(() => request.questions.map(() => false))
@@ -387,10 +390,10 @@ function QuestionCard({
     <div className="question-card">
       <div className="question-card-head">
         <SparkIcon size={11} />
-        <span>The assistant needs your input</span>
+        <span>{t('The assistant needs your input')}</span>
         <button
           className="question-dismiss"
-          title="Dismiss — the assistant continues without an answer"
+          title={t('Dismiss — the assistant continues without an answer')}
           onClick={onDismiss}
         >
           <XIcon size={9} />
@@ -422,7 +425,7 @@ function QuestionCard({
                 className={customOpen[qi] ? 'question-option selected' : 'question-option'}
                 onClick={() => setCustomOpen((open) => open.map((o, i) => (i === qi ? !o : o)))}
               >
-                <span className="question-option-label">Other…</span>
+                <span className="question-option-label">{t('Other…')}</span>
               </button>
             )}
           </div>
@@ -430,7 +433,7 @@ function QuestionCard({
             <input
               className="question-custom-input"
               autoFocus
-              placeholder="Type your answer and press Enter…"
+              placeholder={t('type your answer and press Enter…')}
               value={customs[qi]}
               onChange={(e) => setCustoms((c) => c.map((v, i) => (i === qi ? e.target.value : v)))}
               onKeyDown={(e) => {
@@ -445,7 +448,7 @@ function QuestionCard({
       ))}
       {(!instant || customOpen[0]) && (
         <button className="btn btn-sm btn-primary question-submit" disabled={!complete} onClick={submitAll}>
-          Answer
+          {t('Answer')}
         </button>
       )}
     </div>
@@ -453,6 +456,7 @@ function QuestionCard({
 }
 
 export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: Props): React.JSX.Element {
+  const t = useTranslation()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
@@ -564,7 +568,7 @@ export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: P
   // just describes what's wrong; the assistant regenerates (AGENTS.md tells it
   // to reuse the same folder/name so the files are replaced).
   const startAssetFeedback = (asset: AssetPreview): void => {
-    setInput(`Change the "${asset.label}" asset (${asset.path}): `)
+    setInput(`${t('Change the "{label}" asset ({path}): ', { label: asset.label, path: asset.path })}`)
     textareaRef.current?.focus()
   }
 
@@ -587,11 +591,11 @@ export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: P
       if (dir || isUpload(file)) {
         const path = window.api.pathForFile(file)
         if (!path) {
-          setAttachError(`"${file.name}" has no location on disk, so it can't be attached.`)
+          setAttachError(`"${file.name}" 没有磁盘位置，无法附加。`)
           continue
         }
         if (!dir && file.size > MAX_UPLOAD_BYTES) {
-          setAttachError(`"${file.name}" is over the ${MAX_UPLOAD_BYTES / 1024 / 1024} MB upload limit.`)
+          setAttachError(`"${file.name}" 超过 ${MAX_UPLOAD_BYTES / 1024 / 1024} MB 的上传限制。`)
           continue
         }
         if (!next.some((a) => a.path === path)) {
@@ -600,12 +604,12 @@ export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: P
         continue
       }
       if (!isAttachable(file)) {
-        setAttachError(`"${file.name}" isn't a supported attachment type.`)
+        setAttachError(`"${file.name}" 不是支持的附件类型。`)
         continue
       }
       const total = next.reduce((n, a) => n + (a.dataUrl?.length ?? 0), 0)
       if (file.size > MAX_ATTACHMENT_BYTES || total + file.size * 1.4 > MAX_ATTACHMENT_BYTES) {
-        setAttachError('Attachments are limited to 8 MB per message.')
+        setAttachError('每条消息附件限制为 8 MB。')
         break
       }
       next.push({
@@ -716,7 +720,7 @@ export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: P
           // A cancel that raced /clear reports into an already-empty chat —
           // keep it empty instead of persisting a lone "Stopped." notice.
           if (finalized.length === 0) return finalized
-          return [...finalized, { id: crypto.randomUUID(), role: 'error' as const, content: 'Stopped.' }]
+          return [...finalized, { id: crypto.randomUUID(), role: 'error' as const, content: t('Stopped.') }]
         }
         if (!payload.ok && payload.error) {
           return [
@@ -856,7 +860,7 @@ export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: P
     }
     if (command.name === 'redo') {
       if (redoStackRef.current.length === 0) {
-        appendNotice('Nothing to redo.')
+        appendNotice(t('Nothing to redo.'))
         return
       }
       const result = await window.api.chatRedo()
@@ -914,7 +918,7 @@ export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: P
       {dragActive && (
         <div className="drop-overlay">
           <PlusIcon size={22} />
-          <span>Drop files or folders to attach</span>
+          <span>拖放文件或文件夹以附加</span>
         </div>
       )}
       <div className="chat-body">
@@ -923,11 +927,10 @@ export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: P
           <div className="chat-empty">
             {!opencodeAvailable && (
               <div className="notice">
-                The bundled OpenCode assistant is missing. Reinstall GenieEngine, or run{' '}
-                <code>npm run setup</code> in development.
+                {t('The bundled OpenCode assistant is missing. Reinstall GenieEngine, or run `npm run setup` in development.')}
               </div>
             )}
-            <p className="muted">Describe what you want to build and the assistant will write the game for you.</p>
+            <p className="muted">{t('Describe what you want to build and the assistant will write the game for you.')}</p>
             <div className="chat-suggestions">
               {SUGGESTIONS.map((s) => (
                 <button key={s} className="suggestion-chip" onClick={() => send(s)}>
@@ -936,8 +939,7 @@ export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: P
               ))}
             </div>
             <p className="chat-hint">
-              Tip: type <code>/</code> for commands — <code>/clear</code> resets the chat, <code>/undo</code> takes
-              back your last message and its changes. Press <code>↑</code> to recall messages you sent before.
+              {t('Tip: type / for commands — /clear resets the chat, /undo takes back your last message and its changes. Press ↑ to recall messages you sent before.')}
             </p>
           </div>
         )}
@@ -999,20 +1001,20 @@ export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: P
             <span className="status-dot" />
             <span>
               {streaming
-                ? 'Disconnected — waiting for the internet to come back…'
-                : 'Disconnected — no internet connection.'}
+                ? t('Disconnected — waiting for the internet to come back…')
+                : t('Disconnected — no internet connection.')}
             </span>
           </div>
         )}
         {online && interrupted && !streaming && (
           <div className="chat-status reconnected" role="status">
             <span className="status-dot" />
-            <span>Back online.</span>
+            <span>{t('Back online.')}</span>
             <button
               className="btn btn-sm btn-primary continue-btn"
-              onClick={() => void send('Continue where you left off.')}
+              onClick={() => void send('继续之前的工作。')}
             >
-              Continue
+              {t('Continue')}
             </button>
           </div>
         )}
@@ -1046,7 +1048,7 @@ export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: P
                   <span className="attach-chip-name">{a.name}</span>
                   <button
                     className="attach-remove"
-                    title="Remove attachment"
+                    title={t('Remove attachment')}
                     onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
                   >
                     <XIcon size={9} />
@@ -1060,7 +1062,7 @@ export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: P
             ref={textareaRef}
             className="chat-textarea"
             rows={3}
-            placeholder="Build me a game where…  (/ for commands)"
+            placeholder={t('Build me a game where…  (/ for commands)')}
             value={input}
             onChange={(e) => {
               setInput(e.target.value)
@@ -1150,14 +1152,14 @@ export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: P
               <div className="attach-btns">
                 <button
                   className="attach-btn"
-                  title="Attach files, images, or .zip asset packs — or drag & drop them (folders too) into the chat"
+                  title={t('Attach files, images, or .zip asset packs — or drag & drop them (folders too) into the chat')}
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <PlusIcon size={14} />
                 </button>
                 <button
                   className="attach-btn"
-                  title="Attach a folder of assets — uploaded for the assistant when you send"
+                  title={t('Attach a folder of assets — uploaded for the assistant when you send')}
                   onClick={() => void attachFolder()}
                 >
                   <FolderIcon size={13} />
@@ -1166,8 +1168,8 @@ export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: P
               <select
                 className="model-select"
                 value={modelTier}
-                title="Which chat model answers — Medium for everyday work, Large for tough tasks that need extra juice (may cost more). The conversation continues either way."
-                aria-label="Chat model"
+                title={t('Which chat model answers — Medium for everyday work, Large for tough tasks that need extra juice (may cost more). The conversation continues either way.')}
+                aria-label="聊天模型"
                 onChange={(e) => pickModelTier(e.target.value === 'large' ? 'large' : 'medium')}
               >
                 {MODEL_TIERS.map(({ id, label }) => (
@@ -1178,13 +1180,13 @@ export function ChatPanel({ projectPath, opencodeAvailable, onAssistantDone }: P
               </select>
             </div>
             {streaming ? (
-              <button className="send-btn stop" title="Stop" onClick={() => void window.api.chatCancel()}>
+              <button className="send-btn stop" title={t('Stop')} onClick={() => void window.api.chatCancel()}>
                 <StopIcon size={13} />
               </button>
             ) : (
               <button
                 className="send-btn"
-                title={online ? 'Send' : 'No internet connection'}
+                title={online ? t('Send') : t('No internet connection')}
                 disabled={(!input.trim() && attachments.length === 0) || !online}
                 onClick={() => void send()}
               >

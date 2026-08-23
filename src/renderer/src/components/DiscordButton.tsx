@@ -12,7 +12,7 @@ export function DiscordButton(): React.JSX.Element {
   return (
     <a className="btn btn-sm btn-discord" href={DISCORD_INVITE_URL}>
       <img src={discordMark} alt="" className="discord-mark" />
-      Join Discord
+      加入 Discord
     </a>
   )
 }

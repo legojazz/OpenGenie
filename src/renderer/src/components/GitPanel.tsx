@@ -12,6 +12,7 @@ import {
   UndoIcon,
   UpArrowIcon
 } from './Icons'
+import { useTranslation } from '../i18n/useTranslation'
 
 interface Props {
   active: boolean
@@ -19,17 +20,18 @@ interface Props {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  M: 'Modified',
-  A: 'Added',
-  D: 'Deleted',
-  R: 'Renamed',
-  C: 'Copied',
-  U: 'Untracked',
-  '?': 'Untracked'
+  M: '已修改',
+  A: '已添加',
+  D: '已删除',
+  R: '已重命名',
+  C: '已复制',
+  U: '未跟踪',
+  '?': '未跟踪'
 }
 
 /** Discard is destructive, so the button asks for a second click to confirm. */
 function DiscardButton({ onConfirm }: { onConfirm: () => void }): React.JSX.Element {
+  const t = useTranslation()
   const [armed, setArmed] = useState(false)
   useEffect(() => {
     if (!armed) return
@@ -39,18 +41,18 @@ function DiscardButton({ onConfirm }: { onConfirm: () => void }): React.JSX.Elem
   return armed ? (
     <button
       className="row-btn danger"
-      title="Click again to discard changes"
+      title={t('Click again to discard changes')}
       onClick={(e) => {
         e.stopPropagation()
         onConfirm()
       }}
     >
-      Sure?
+      {t('Sure?')}
     </button>
   ) : (
     <button
       className="row-btn"
-      title="Discard changes"
+      title={t('Discard changes')}
       onClick={(e) => {
         e.stopPropagation()
         setArmed(true)
@@ -73,6 +75,7 @@ function Section({
   actions?: React.ReactNode
   children: React.ReactNode
 }): React.JSX.Element {
+  const t = useTranslation()
   const [open, setOpen] = useState(true)
   return (
     <div className="scm-section">
@@ -99,6 +102,7 @@ function splitPath(path: string): { name: string; dir: string } {
 
 /** VS Code-style source control: stage, commit, push/pull, remote setup. */
 export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
+  const t = useTranslation()
   const [status, setStatus] = useState<GitStatus | null>(null)
   const [history, setHistory] = useState<GitCommit[]>([])
   const [message, setMessage] = useState('')
@@ -151,7 +155,7 @@ export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
     void run(
       'commit',
       () => window.api.gitCommit(message.trim()),
-      () => 'Committed.'
+      () => t('Committed.')
     ).then(() => setMessage(''))
   }
 
@@ -159,9 +163,9 @@ export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
     return (
       <div className="git-panel">
         <div className="panel-header">
-          <span className="panel-title-caps">Source Control</span>
+          <span className="panel-title-caps">{t('Source Control')}</span>
         </div>
-        <p className="muted pad">Loading…</p>
+        <p className="muted pad">{t('Loading…')}</p>
       </div>
     )
   }
@@ -170,16 +174,16 @@ export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
     return (
       <div className="git-panel">
         <div className="panel-header">
-          <span className="panel-title-caps">Source Control</span>
+          <span className="panel-title-caps">{t('Source Control')}</span>
         </div>
         <div className="scm-empty">
-          <p className="muted small-text">This project is not a git repository yet.</p>
+          <p className="muted small-text">{t('This project is not a git repository yet.')}</p>
           <button
             className="btn btn-primary scm-wide-btn"
             disabled={busy !== null}
             onClick={() => void run('init', () => window.api.gitInit())}
           >
-            Initialize Repository
+            {t('Initialize Repository')}
           </button>
           {error && <div className="error-banner small">{error}</div>}
         </div>
@@ -201,7 +205,7 @@ export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
           {change.staged ? (
             <button
               className="row-btn"
-              title="Unstage change"
+              title={t('Unstage change')}
               onClick={() => void run('unstage', () => window.api.gitUnstage([change.path]))}
             >
               <MinusIcon size={12} />
@@ -211,7 +215,7 @@ export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
               <DiscardButton onConfirm={() => void run('discard', () => window.api.gitDiscard(change))} />
               <button
                 className="row-btn"
-                title="Stage change"
+                title={t('Stage change')}
                 onClick={() => void run('stage', () => window.api.gitStage([change.path]))}
               >
                 <PlusIcon size={12} />
@@ -231,12 +235,12 @@ export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
   return (
     <div className="git-panel">
       <div className="panel-header">
-        <span className="panel-title-caps">Source Control</span>
+        <span className="panel-title-caps">{t('Source Control')}</span>
         <span className="header-actions push-right">
           <button
             className="icon-btn sm"
             disabled={busy !== null || noRemote}
-            title={noRemote ? 'Add a remote first' : 'Pull'}
+            title={noRemote ? t('Add a remote first') : t('Pull')}
             onClick={() => void run('pull', () => window.api.gitPull(), (d) => String(d))}
           >
             <DownArrowIcon size={14} />
@@ -244,20 +248,20 @@ export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
           <button
             className="icon-btn sm"
             disabled={busy !== null || noRemote}
-            title={noRemote ? 'Add a remote first' : 'Push'}
-            onClick={() => void run('push', () => window.api.gitPush(), () => 'Pushed to remote.')}
+            title={noRemote ? t('Add a remote first') : t('Push')}
+            onClick={() => void run('push', () => window.api.gitPush(), () => t('Pushed to remote.'))}
           >
             <UpArrowIcon size={14} />
           </button>
-          <button className="icon-btn sm" title="Refresh" onClick={() => void refresh()}>
+          <button className="icon-btn sm" title={t('Refresh')} onClick={() => void refresh()}>
             <RefreshIcon size={14} />
           </button>
         </span>
       </div>
 
-      <div className="scm-branch-row" title={status.upstream ?? 'No upstream branch'}>
+      <div className="scm-branch-row" title={status.upstream ?? t('No upstream branch')}>
         <GitBranchIcon size={13} />
-        <span className="scm-branch-name">{status.branch || '(no branch)'}</span>
+        <span className="scm-branch-name">{status.branch || t('No branch')}</span>
         {(status.ahead > 0 || status.behind > 0) && (
           <span className="scm-aheadbehind">
             {status.behind > 0 && `${status.behind}↓`} {status.ahead > 0 && `${status.ahead}↑`}
@@ -270,7 +274,7 @@ export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
         <textarea
           className="commit-input"
           rows={1}
-          placeholder={`Message (⌘Enter to commit on "${status.branch}")`}
+          placeholder={t('Message (⌘Enter to commit on "{branch}")', { branch: status.branch || '' })}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={(e) => {
@@ -283,10 +287,10 @@ export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
         <button
           className="btn btn-primary scm-wide-btn"
           disabled={busy !== null || !message.trim() || status.staged.length === 0}
-          title={status.staged.length === 0 ? 'Stage changes first' : 'Commit staged changes'}
+          title={status.staged.length === 0 ? t('Stage changes first') : t('Commit staged changes')}
           onClick={commit}
         >
-          <CheckIcon size={13} /> {busy === 'commit' ? 'Committing…' : 'Commit'}
+          <CheckIcon size={13} /> {busy === 'commit' ? t('Committing…') : t('Commit')}
         </button>
       </div>
 
@@ -296,12 +300,12 @@ export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
       <div className="git-scroll">
         {status.staged.length > 0 && (
           <Section
-            title="Staged Changes"
+            title={t('Staged Changes')}
             count={status.staged.length}
             actions={
               <button
                 className="row-btn"
-                title="Unstage all changes"
+                title={t('Unstage all changes')}
                 onClick={() => void run('unstage', () => window.api.gitUnstage(status.staged.map((c) => c.path)))}
               >
                 <MinusIcon size={12} />
@@ -313,13 +317,13 @@ export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
         )}
 
         <Section
-          title="Changes"
+          title={t('Changes')}
           count={status.unstaged.length}
           actions={
             status.unstaged.length > 0 ? (
               <button
                 className="row-btn"
-                title="Stage all changes"
+                title={t('Stage all changes')}
                 onClick={() => void run('stage', () => window.api.gitStage(status.unstaged.map((c) => c.path)))}
               >
                 <PlusIcon size={12} />
@@ -328,16 +332,16 @@ export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
           }
         >
           {status.unstaged.length === 0 ? (
-            <p className="muted scm-note">No changes.</p>
+            <p className="muted scm-note">{t('No changes.')}</p>
           ) : (
             status.unstaged.map(changeRow)
           )}
         </Section>
 
-        <Section title="Remote">
+        <Section title={t('Remote')}>
           {noRemote ? (
             <div className="remote-box">
-              <p className="muted scm-note">Add a remote (e.g. a GitHub repository URL) to push your game online.</p>
+              <p className="muted scm-note">{t('Add a remote (e.g. a GitHub repository URL) to push your game online.')}</p>
               <input
                 className="text-input"
                 placeholder="https://github.com/you/your-game.git"
@@ -351,11 +355,11 @@ export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
                   void run(
                     'remote',
                     () => window.api.gitAddRemote(remoteUrl.trim()),
-                    () => 'Remote added. Use Push to publish your branch.'
+                    () => t('Remote added. Use Push to publish your branch.')
                   ).then(() => setRemoteUrl(''))
                 }
               >
-                Add Remote
+                {t('Add Remote')}
               </button>
             </div>
           ) : (
@@ -372,7 +376,7 @@ export function GitPanel({ active, refreshToken }: Props): React.JSX.Element {
         </Section>
 
         {history.length > 0 && (
-          <Section title="History">
+          <Section title={t('History')}>
             {history.map((commit_) => (
               <div key={commit_.hash} className="change-row history" title={commit_.subject}>
                 <span className="hash">{commit_.hash}</span>
